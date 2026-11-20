@@ -223,6 +223,20 @@
 @media(max-width:760px){.order-app .customer-page-heading.menu-page-heading{font-size:clamp(32px,8vw,43px)}}
 .order-app .page-menu-tools .menu-search,.order-app .page-menu-tools .menu-search:focus,.order-app .page-menu-tools .menu-search:focus-visible{border:0!important;outline:0!important;box-shadow:none!important;background:transparent}
 .order-app .page-menu-tools .menu-search,.order-app .page-menu-tools .menu-search:focus,.order-app .page-menu-tools .menu-search:focus-visible{border:0!important;border-bottom:1px solid #ffffff42!important;border-radius:0!important;outline:0!important;box-shadow:none!important;background:transparent}
+.order-app .order-progress{margin-top:20px}
+.order-app .order-progress .progress-rail{height:4px;overflow:hidden;border-radius:4px;background:#ffffff25}
+.order-app .order-progress .progress-rail i{display:block;height:100%;border-radius:inherit;background:var(--orange);transition:width .35s ease}
+.order-app .progress-steps{display:flex;gap:0;overflow-x:auto;margin:12px 0 0;padding:0 0 5px;list-style:none;scrollbar-width:thin}
+.order-app .progress-steps li{position:relative;display:grid;min-width:76px;flex:1;gap:7px;color:#908a82;font-size:9px}
+.order-app .progress-steps li:before{width:8px;height:8px;border:1px solid #817a72;border-radius:50%;background:var(--panel);content:''}
+.order-app .progress-steps li.complete,.order-app .progress-steps li.current{color:#f3ece3}
+.order-app .progress-steps li.complete:before,.order-app .progress-steps li.current:before{border-color:var(--orange);background:var(--orange)}
+.order-app .progress-steps li.current{font-weight:700}
+.order-app .order-courier{margin:12px 0 0;color:#d9c2ad;font-size:12px}
+.order-app .order-progress-cancelled{margin:18px 0 0;color:#ec9386}
+@media(max-width:600px){.order-app .progress-steps li{min-width:68px;font-size:8px}}
+.order-app .order-detail-loading .customer-page-panel>:not(.customer-page-toolbar){display:none}
+.order-app .order-detail-loading .customer-page-panel:after{display:block;margin:32px 0;color:#aaa49b;font-size:13px;content:'Loading your order…'}
 .order-app .page-menu-tools .menu-search:focus,.order-app .page-menu-tools .menu-search:focus-visible{border-bottom-color:var(--orange)!important}
 .order-app[data-theme=light] .page-menu-tools .menu-search{border-bottom-color:#cfc7bd!important}
 .order-app[data-theme=light] .page-menu-tools .menu-search:focus,.order-app[data-theme=light] .page-menu-tools .menu-search:focus-visible{border-bottom-color:var(--orange)!important}
