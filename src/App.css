@@ -375,7 +375,7 @@
 .order-app .add-line{border:0;border-radius:4px;background:linear-gradient(105deg,#151515 0%,#2d2d2d 48%,#595959 100%);color:#fff;box-shadow:0 5px 16px #00000035}
 .order-app .add-line b{color:#fff}
 .order-app .add-line:hover{background:linear-gradient(105deg,#242424 0%,#3b3b3b 48%,#686868 100%);box-shadow:0 8px 20px #00000050}
-.order-app[data-theme=light]{--black:#ece8e1;--panel:#f6f3ed;background:var(--black)}
+.order-app[data-theme=light]{--black:#fff;--panel:#fff;background:var(--black)}
 .order-app[data-theme=light] .customer-page-panel{background:var(--panel)}
 .order-app[data-theme=light] .restaurant-details,.order-app[data-theme=light] .table-help,.order-app[data-theme=light] .previous-orders,.order-app[data-theme=light] .order-status-section{background:var(--black)}
 @media(min-width:761px){
@@ -391,3 +391,13 @@
  .order-app .site-nav a{display:inline-flex;flex:none;align-items:center;height:38px;white-space:nowrap}
 }
 @media(max-width:992px){.order-app .site-nav{display:none}}
+@media(min-width:761px){
+ .order-app .customer-menu-page{padding-top:16px;padding-bottom:48px}
+ .order-app .customer-menu-page .menu-page-panel{padding-top:12px;padding-bottom:32px}
+ .order-app .customer-menu-page .customer-page-toolbar{min-height:36px;margin-bottom:18px;padding-bottom:8px}
+ .order-app .customer-menu-page .menu-page-heading{margin-top:5px;margin-bottom:6px;font-size:clamp(34px,4vw,48px)}
+ .order-app .customer-menu-page .customer-page-intro{margin-bottom:14px;line-height:1.45}
+ .order-app .customer-menu-page .page-menu-tools{margin:12px 0 16px}
+ .order-app .customer-menu-page .page-menu-tools .food-tabs button{min-height:0!important;padding:6px 14px!important}
+ .order-app .customer-menu-page .page-menu-tools .menu-search{height:36px;min-height:36px}
+}
