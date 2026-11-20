@@ -1,7 +1,30 @@
 {
   "name": "Ember & Spice",
-  "tagline": "Indian kitchen · Bengaluru",
+  "tagline": "Indian kitchen Â· Bengaluru",
   "description": "A neighborhood Indian kitchen serving freshly prepared food for dine-in and home delivery.",
+  "hero": {
+    "line1": "Good food.",
+    "line2": "Great company.",
+    "eyebrow": "A NEIGHBORHOOD KITCHEN IN BENGALURU",
+    "primaryAction": "EXPLORE THE MENU"
+  },
+  "story": {
+    "eyebrow": "OUR APPROACH",
+    "heading": "A little more care in every course.",
+    "body": "We bring together familiar Indian flavors, fresh ingredients and the warmth of a table made for sharing. Every dish is prepared to order by a kitchen that takes the time to get the details right.",
+    "imageUrl": "https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=1200&q=85",
+    "imageAlt": "Guests sharing a meal at the restaurant",
+    "signature": "Thoughtful cooking. Easy hospitality."
+  },
+  "experiences": [
+    { "number": "01", "title": "Stay a while", "text": "Settle in for a relaxed meal, made fresh and served at your table.", "action": "SCAN A TABLE QR", "mode": "dineIn" },
+    { "number": "02", "title": "Bring everyone together", "text": "Order a few favorites for the table and make room for one more plate.", "action": "EXPLORE THE MENU", "mode": "menu" },
+    { "number": "03", "title": "Enjoy it at home", "text": "Choose your dishes and we will bring them to your door where delivery is available.", "action": "ORDER FOR HOME", "mode": "delivery" }
+  ],
+  "testimonials": [
+    { "quote": "The kind of place where dinner turns into a long, lovely evening.", "name": "A note from our guests", "detail": "Good food, shared" },
+    { "quote": "Freshly made, full of flavor, and always worth coming back for.", "name": "A note from our guests", "detail": "From our kitchen" }
+  ],
   "contact": {
     "phone": "+91 80 0000 0000",
     "email": "hello@emberandspice.example",
@@ -27,7 +50,7 @@
   "delivery": {
     "minimumOrder": 0,
     "fee": 0,
-    "estimatedMinutes": "30–50 minutes",
+    "estimatedMinutes": "30â€“50 minutes",
     "coverageDescription": "Delivery availability is confirmed by delivery address or postal code."
   },
   "social": {
@@ -37,7 +60,24 @@
   },
   "branding": {
     "logoUrl": "",
-    "heroImageUrl": "",
+    "heroImageUrl": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1400&q=90",
+    "banners": [
+      {
+        "imageUrl": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1400&q=90",
+        "alt": "Warm restaurant dining room",
+        "eyebrow": "FRESH FROM OUR KITCHEN"
+      },
+      {
+        "imageUrl": "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1400&q=90",
+        "alt": "A beautifully prepared restaurant table",
+        "eyebrow": "MADE FRESH TO ORDER"
+      },
+      {
+        "imageUrl": "https://images.unsplash.com/photo-1515003197210-e0cd7184f8b5?auto=format&fit=crop&w=1400&q=90",
+        "alt": "Fresh dishes served at the restaurant",
+        "eyebrow": "GOOD FOOD, SHARED"
+      }
+    ],
     "primaryColor": "#ff6b26",
     "currency": "INR",
     "locale": "en-IN"
