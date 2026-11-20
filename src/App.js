@@ -73,12 +73,15 @@ export default function App(){
  function addItem(item,options,note){const delta=options.reduce((sum,x)=>sum+Number(x.priceDelta||0),0);const key=`${item.id}-${options.map(x=>x.id).join('_')||'plain'}`;setCart(lines=>{const found=lines.find(x=>x.key===key);return found?lines.map(x=>x.key===key?{...x,quantity:x.quantity+1}:x):[...lines,{...item,price:Number(item.price)+delta,basePrice:Number(item.price),quantity:1,key,selectedOptions:options,note}]});setCustomItem(null);notify('Added to your order')}
  function beginCheckout(){if(!cart.length)return;if(!customer){setAuthPurpose('checkout');setDrawer('auth');return}setDrawer('checkout')}
  async function requestOtp(e){e.preventDefault();setBusy(true);setError('');try{const result=await api('/auth/customer/otp',send('POST',{phone:authPhone}));setDevCode(result.devCode||'');setAuthStep('otp')}catch(e){setError(e.message)}finally{setBusy(false)}}
- async function verifyOtp(e){e.preventDefault();setBusy(true);setError('');try{const result=await api('/auth/customer/verify',send('POST',{phone:authPhone,code:otp}));const signed={...result.customer,token:result.token};setCustomer(signed);localStorage.setItem('restro.customer',JSON.stringify(signed));setAuthStep('phone');setOtp('');setDrawer(authPurpose==='checkout'?'checkout':'');setAuthPurpose('');notify('Mobile number verified')}catch(e){setError(e.message)}finally{setBusy(false)}}
+ async function verifyOtp(e){e.preventDefault();setBusy(true);setError('');try{const result=await api('/auth/customer/verify',send('POST',{phone:authPhone,code:otp}));const signed={...result.customer,token:result.token};setCustomer(signed);localStorage.setItem('restro.customer',JSON.stringify(signed));setAuthStep('phone');setOtp('');setDrawer(authPurpose==='checkout'?'checkout':authPurpose==='orders'?'orders':'');setAuthPurpose('');notify('Mobile number verified')}catch(e){setError(e.message)}finally{setBusy(false)}}
  async function submitOrder(e){e.preventDefault();setBusy(true);setError('');try{let placed;const key=window.crypto?.randomUUID?.()||`${Date.now()}-${Math.random()}`;const lines=cart.map(x=>({menuItemId:x.id,quantity:x.quantity,options:serializeOptions(x.selectedOptions),note:x.note}));if(isDineIn){if(!session?.id)throw new Error('The table session is still opening. Try again in a moment.');placed=await api(`/sessions/${session.id}/orders`,{token:customer.token,...send('POST',{qrToken:tableToken,items:lines}),headers:{'Idempotency-Key':key}})}else{placed=await api('/orders',{token:customer.token,...send('POST',{address,items:lines}),headers:{'Idempotency-Key':key}})}setCurrentOrder(placed);setCart([]);setOrders(old=>[placed,...old.filter(x=>x.id!==placed.id)]);setDrawer('order-detail',placed.id);notify('Your order is in the kitchen');}catch(e){setError(e.message)}finally{setBusy(false)}}
  async function payDemo(order){setBusy(true);setError('');try{const result=await api(`/orders/${order.id}/dummy-payment`,{token:customer.token,...send('POST',{})});notify(result.message||'Demo payment recorded');setCurrentOrder(x=>x?{...x,paymentStatus:'PAID'}:x);api('/orders',{token:customer.token}).then(setOrders)}catch(e){setError(e.message)}finally{setBusy(false)}}
  async function payTable(){setBusy(true);setError('');try{const result=await api(`/sessions/${session.id}/dummy-payment`,{token:customer.token,...send('POST',{qrToken:tableToken})});setCurrentOrder(x=>({...x,paymentStatus:'PAID'}));notify(result.message)}catch(e){setError(e.message)}finally{setBusy(false)}}
  function answer(index){if(gameAnswer!==null)return;setGameAnswer(index);if(index===questions[gameIndex][2])setGameScore(score=>score+1)}
  function toggleTheme(){setTheme(current=>current==='dark'?'light':'dark')}
+
+ const profileHeader=<CustomerHeader company={company} table={table} tableToken={tableToken} customer={customer} theme={theme} toggleTheme={toggleTheme} cartCount={cartCount} mobileNavOpen={mobileNavOpen} setMobileNavOpen={setMobileNavOpen} onBack={()=>setDrawer('')} onAccount={()=>customer?setDrawer('account'):(setAuthPurpose('login'),setAuthStep('phone'),setDrawer('auth'))} onCart={()=>setDrawer('cart')} onMenu={()=>{setMobileNavOpen(false);setDrawer('menu')}} onSection={section=>{setMobileNavOpen(false);setDrawer('');window.setTimeout(()=>document.getElementById(section)?.scrollIntoView({behavior:'smooth'}),120)}}/>;
+ if(drawer==='account'||drawer==='orders'||drawer==='cart')return <div className="order-app" data-theme={theme}><Toaster position="top-right" toastOptions={{duration:3200,style:{fontFamily:'Inter, sans-serif',fontSize:14,padding:'12px 16px',background:theme==='dark'?'#201f1d':'#fff',color:theme==='dark'?'#f2ece4':'#29241f',border:theme==='dark'?'1px solid #ffffff28':'1px solid #ded7ce'}}}/>{drawer==='account'?<AccountScreen header={profileHeader} customer={customer} orders={orders} connected={connected} onBack={()=>setDrawer('')} onOrders={()=>setDrawer('orders')} onSignOut={()=>{localStorage.removeItem('restro.customer');setCustomer(null);setDrawer('')}}/>:drawer==='orders'?<CustomerOrdersScreen header={profileHeader} customer={customer} orders={orders} connected={connected} onBack={()=>setDrawer('')} onOrder={order=>{setCurrentOrder(order);setDrawer('order-detail',order.id)}} onMenu={()=>setDrawer('menu')} onSignIn={()=>{setAuthPurpose('orders');setAuthStep('phone');setDrawer('auth')}}/>:<CustomerCartScreen header={profileHeader} cart={cart} cartCount={cartCount} subtotal={subtotal} isDineIn={isDineIn} table={table} connected={connected} error={error} onBack={()=>setDrawer('')} onUpdateQty={updateQty} onCheckout={beginCheckout} onOrders={()=>setDrawer('orders')} onMenu={()=>setDrawer('menu')}/>}</div>;
 
  return <div className="order-app" data-theme={theme}><Toaster position="top-right" toastOptions={{duration:3200,style:{fontFamily:'Inter, sans-serif',fontSize:14,padding:'12px 16px',background:theme==='dark'?'#201f1d':'#fff',color:theme==='dark'?'#f2ece4':'#29241f',border:theme==='dark'?'1px solid #ffffff28':'1px solid #ded7ce'}}}/><header className={drawer==='auth'?'order-header auth-header-hidden':'order-header'}><a className="order-brand" href={tableToken?`/t/${tableToken}`:'/'} onClick={e=>{e.preventDefault();setDrawer('')}}><span className="brand-symbol">R<span>✳</span></span><span>{company.name}<small>{company.tagline}</small></span></a><nav className="site-nav" aria-label="Main navigation"><a href="#story">OUR STORY</a><a href="#menu" onClick={e=>{e.preventDefault();setDrawer('menu')}}>MENU</a><a href="#visit">VISIT</a></nav><div className="header-context">{table?<span className="table-chip"><i/> TABLE {table.tableNumber}</span>:<span className="delivery-chip">HOME DELIVERY AVAILABLE</span>}</div><div className="header-actions"><ThemeToggle theme={theme} onToggle={toggleTheme}/><button className="account-button" onClick={()=>customer?setDrawer('account'):(setAuthPurpose('login'),setAuthStep('phone'),setDrawer('auth'))}>{customer?customer.name||customer.phone:'SIGN IN'}</button><button className="header-cart" onClick={()=>setDrawer('cart')}>ORDER <b>{cartCount}</b></button></div><div className="mobile-header-actions"><button className="mobile-menu-button" type="button" aria-label={mobileNavOpen?'Close navigation':'Open navigation'} aria-expanded={mobileNavOpen} aria-controls="mobile-site-menu" onClick={()=>setMobileNavOpen(open=>!open)}>{mobileNavOpen?'×':'☰'}</button><ThemeToggle theme={theme} onToggle={toggleTheme}/><button className="mobile-icon-button" type="button" aria-label={customer?'Your account':'Sign in'} onClick={()=>customer?setDrawer('account'):(setAuthPurpose('login'),setAuthStep('phone'),setDrawer('auth'))}><UserIcon/></button><button className="mobile-order-button" type="button" aria-label={`Order, ${cartCount} items`} onClick={()=>setDrawer('cart')}><CartIcon/><b>{cartCount}</b></button></div>{mobileNavOpen&&<nav id="mobile-site-menu" className="mobile-site-menu" aria-label="Mobile navigation"><a href="#story" onClick={()=>setMobileNavOpen(false)}>OUR STORY <span>01</span></a><a href="#menu" onClick={e=>{e.preventDefault();setMobileNavOpen(false);setDrawer('menu')}}>THE MENU <span>02</span></a><a href="#visit" onClick={()=>setMobileNavOpen(false)}>FIND US <span>03</span></a></nav>}</header>
  {!drawer&&<main id="top"><section className="order-hero"><div className="hero-glow"/><div className="hero-content reveal"><span className="orange-kicker">✳ &nbsp; {activeBanner?.eyebrow||'FRESH FROM OUR KITCHEN'}</span><h1>{company.hero?.line1||'Good food.'}<br/><em>{company.hero?.line2||'Great company.'}</em></h1><p>{company.description}</p><button className="orange-button" onClick={()=>setDrawer('menu')}>EXPLORE THE MENU <span>-&gt;</span></button><div className="hero-meta"><span>{table?`TABLE ${table.tableNumber} · DINE IN`:'HOME DELIVERY · BENGALURU'}</span><span>MADE FRESH TO ORDER</span></div></div><div className="hero-image reveal">{siteBannerImage&&<img src={siteBannerImage} alt={activeBanner?.alt||`${company.name} restaurant`}/>}<span className="image-caption">{company.name.toUpperCase()} · MADE WITH CARE</span><div className="hero-stamp">FRESH<br/><b>✳</b><br/>ALWAYS</div></div></section>
@@ -97,6 +100,143 @@ export default function App(){
  {!!drawer&&<main className={drawer==='order-detail'&&!currentOrder?'customer-page order-detail-loading':drawer==='auth'?'customer-page customer-auth-route':drawer==='menu'?'customer-page customer-menu-page':'customer-page'}><section className={drawer==='auth'?'customer-page-panel auth-page-panel':drawer==='menu'?'customer-page-panel menu-page-panel':'customer-page-panel'}><div className="customer-page-toolbar"><button className="customer-page-back" onClick={()=>setDrawer('')}>BACK <span>TO RESTAURANT</span></button><span>{drawer==='cart'?'YOUR ORDER':drawer==='checkout'?'CHECKOUT':drawer==='auth'?'SIGN IN':drawer==='account'?'YOUR ACCOUNT':drawer==='orders'?'ORDER HISTORY':drawer==='help'?'TABLE SERVICE':drawer==='scan'?'SCAN TABLE QR':drawer==='menu'?'THE MENU':'ORDER DETAILS'}</span><span className="customer-page-live"><i/> {connected?'LIVE':'RECONNECTING'}</span></div>
  {drawer==='menu'?<><span className="orange-kicker">FROM OUR KITCHEN</span><h1 className="customer-page-heading menu-page-heading">Pick your <em>pleasure.</em></h1><p className="customer-page-intro">Everything is made to order. Find something delicious for your table or home.</p><div className="menu-tools page-menu-tools"><div className="food-tabs">{categories.map(c=><button key={c} className={category===c?'selected':''} onClick={()=>setCategory(c)}>{c}</button>)}</div><input className="menu-search" placeholder="Find a dish" value={search} onChange={e=>setSearch(e.target.value)}/></div>{menuLoading?<div className="menu-message">Loading the restaurant menu...</div>:menuError?<div className="menu-message menu-error">{menuError}</div>:items.length===0?<div className="menu-message">No dishes match those filters. Try another category or search.</div>:<div className="food-grid page-food-grid">{items.map(item=><article className="food-card" key={item.id}><button className="food-photo" onClick={()=>setCustomItem(item)}>{item.imageUrl&&<img src={item.imageUrl} alt={item.name}/>}<span className="food-tag">{item.isVegetarian?'VEG ? ':''}{item.categoryName?.toUpperCase()}</span><span className="photo-add">+ CUSTOMISE</span></button><div className="food-info"><div><span className="food-category">{item.isVegetarian?'VEG':'NON-VEG'} ? {item.station||'KITCHEN'}</span><h3>{item.name}</h3><p>{item.description}</p></div><strong>{money(item.price)}</strong></div><button className="add-line" onClick={()=>setCustomItem(item)}>ADD TO ORDER <b>+</b></button></article>)}</div>}</>:drawer==='scan'?<><span className="orange-kicker">SCAN YOUR TABLE</span><h1 className="customer-page-heading">Find your <em>seat.</em></h1><p className="customer-page-intro">Allow camera access and hold your table QR code inside the frame.</p><QRCodeScanner onDetected={token=>window.location.assign('/t/'+token)}/></>:drawer==='checkout'?<><span className="orange-kicker">{isDineIn?'TABLE '+(table?.tableNumber||''):'HOME DELIVERY'}</span><h1 className="customer-page-heading">Almost <em>there.</em></h1><form className="checkout-form" onSubmit={submitOrder}>{isDineIn?<p>Your order will be served at Table {table?.tableNumber}.</p>:<><label>YOUR NAME<input required value={address.recipientName} onChange={e=>setAddress({...address,recipientName:e.target.value})}/></label><label>MOBILE NUMBER<input required value={address.phone||customer?.phone} onChange={e=>setAddress({...address,phone:e.target.value})}/></label><label>DELIVERY ADDRESS<input required value={address.line1} onChange={e=>setAddress({...address,line1:e.target.value})} placeholder="House, street, building"/></label><label>AREA / CITY<input required value={address.city} onChange={e=>setAddress({...address,city:e.target.value})}/></label><label>POSTAL CODE<input required value={address.postalCode} onChange={e=>setAddress({...address,postalCode:e.target.value})}/></label><label>DELIVERY NOTE<input value={address.deliveryInstructions} onChange={e=>setAddress({...address,deliveryInstructions:e.target.value})} placeholder="Landmark or instructions"/></label></>}{error&&<div className="form-error">{error}</div>}{!isDineIn&&deliveryQuote&&<div className="quote-card"><div><span>Delivery fee</span><b>{money(deliveryQuote.deliveryFee)}</b></div><div><span>Tax estimate</span><b>{money(deliveryQuote.tax)}</b></div><div><span>Estimated total</span><b>{money(deliveryQuote.total)}</b></div><small>Estimated delivery: {deliveryQuote.estimatedMinutes} min.</small></div>}{!isDineIn&&deliveryQuoteError&&<div className="form-error">{deliveryQuoteError}</div>}<div className="drawer-total"><span>Items subtotal</span><b>{money(subtotal)}</b></div><button className="orange-button wide" disabled={busy||(!session&&isDineIn)||(!isDineIn&&(!deliveryQuote||!deliveryQuote.deliverable))}>{busy?'PLACING ORDER...':'PLACE ORDER'} <span>-&gt;</span></button></form></>:drawer==='auth'?<div className="customer-auth-page"><section className="customer-auth-story">{siteBannerImage&&<img className="customer-auth-image" src={siteBannerImage} alt=""/>}<div className="customer-auth-story-content"><a className="customer-auth-brand" href={tableToken?'/t/'+tableToken:'/'} onClick={e=>{e.preventDefault();setDrawer('')}}><span className="brand-symbol">R</span><span>{company.name}<small>{company.tagline}</small></span></a><span className="orange-kicker">A WARM WELCOME, ALWAYS</span><h1>Good food.<br/><em>Good company.</em></h1><p>Continue with your mobile number and a one-time code to order from {company.name}.</p><span className="auth-story-note">MADE FRESH ? SHARED TOGETHER</span></div></section><section className="customer-auth-form"><div className="customer-auth-tools"><button className="customer-page-back" onClick={()=>setDrawer('')}>BACK TO RESTAURANT</button><ThemeToggle theme={theme} onToggle={toggleTheme}/></div><div className="customer-auth-form-content"><div className="customer-auth-panel"><AuthPanel authStep={authStep} setAuthStep={setAuthStep} phone={authPhone} setPhone={setAuthPhone} otp={otp} setOtp={setOtp} devCode={devCode} error={error} busy={busy} onRequest={requestOtp} onVerify={verifyOtp}/></div></div></section></div>:drawer==='help'?<><span className="orange-kicker">AT YOUR SERVICE ? TABLE {table?.tableNumber}</span><h1 className="customer-page-heading">What can we <em>bring you?</em></h1><div className="request-list">{['WATER','NAPKINS','CUTLERY','BILL','SOMETHING ELSE'].map(type=><button key={type} onClick={async()=>{try{await api('/sessions/'+session.id+'/requests',{token:customer.token,...send('POST',{type,qrToken:tableToken})});notify('Your waiter has been notified');setDrawer('')}catch(e){setError(e.message)}}}>{type}<b>-&gt;</b></button>)}</div></>:drawer==='account'?<><span className="orange-kicker">YOUR ACCOUNT</span><h1 className="customer-page-heading">Hello, <em>{customer?.name||customer?.phone}</em></h1><button className="orange-button wide" onClick={()=>{localStorage.removeItem('restro.customer');setCustomer(null);setDrawer('')}}>SIGN OUT</button><button className="text-action" onClick={()=>setDrawer('orders')}>VIEW RECENT ORDERS -&gt;</button></>:drawer==='orders'?<><span className="orange-kicker">ORDER HISTORY</span><h1 className="customer-page-heading">Your <em>orders.</em></h1>{orders.length?orders.map(o=><button className="history-row" key={o.id} onClick={()=>{setCurrentOrder(o);setDrawer('order-detail',o.id)}}><span><b>{o.orderNumber||o.order_number}</b><small>{o.orderType||o.order_type} · {new Date(o.placedAt||o.placed_at).toLocaleDateString()}</small></span><i className={'status-pill '+String(o.status).toLowerCase()}>{o.status}</i></button>):<div className="empty-drawer">Your order history will appear here.<button className="text-action" onClick={()=>setDrawer('menu')}>EXPLORE THE MENU -&gt;</button></div>}</>:drawer==='order-detail'&&currentOrder?<><span className="orange-kicker">{currentOrder.paymentStatus==='PAID'?'PAYMENT COMPLETE':'LIVE FROM THE KITCHEN'}</span><h1 className="customer-page-heading">Your order is <em>{currentOrder.status||'in good hands'}.</em></h1><article className="status-card"><div><span className="status-dot"/><b>{currentOrder.orderNumber||currentOrder.order_number}</b><small>{currentOrder.placedAt?new Date(currentOrder.placedAt).toLocaleString():''}</small></div><div className="status-items">{(currentOrder.items||[]).map((item,index)=><span key={index}>{item.quantity||item.qty} x {item.name||item.item_name}<i>{item.status||currentOrder.status||'NEW'}</i></span>)}</div><OrderProgress order={currentOrder}/>{currentOrder.paymentStatus!=='PAID'&&<button className="orange-button wide" disabled={busy} onClick={()=>isDineIn?payTable():payDemo(currentOrder)}>PAY SECURELY ? DEMO ONLY</button>}</article></>:<><span className="orange-kicker">TABLE {table?.tableNumber||'HOME DELIVERY'}</span><h1 className="customer-page-heading">Your <em>order.</em></h1>{cart.length?<><div className="drawer-items">{cart.map(x=><div className="drawer-item" key={x.key}><div><b>{x.name}</b><small>{x.selectedOptions.map(o=>o.label).join(' ? ')||'Made fresh'}</small><strong>{money(x.price*x.quantity)}</strong></div><span className="qty-control"><button onClick={()=>updateQty(x.key,-1)}>-</button>{x.quantity}<button onClick={()=>updateQty(x.key,1)}>+</button></span></div>)}</div><div className="drawer-total"><span>Subtotal</span><b>{money(subtotal)}</b></div><small className="tax-note">Taxes and delivery, if any, are calculated at checkout.</small>{error&&<div className="form-error">{error}</div>}<button className="orange-button wide" onClick={beginCheckout}>CONTINUE TO CHECKOUT -&gt;</button></>:<div className="empty-drawer">Your order is empty for now.<button className="text-action" onClick={()=>setDrawer('menu')}>EXPLORE THE MENU -&gt;</button></div>}</>}</section></main>}
  </div>;
+}
+
+function CustomerHeader({company,table,tableToken,customer,theme,toggleTheme,cartCount,mobileNavOpen,setMobileNavOpen,onBack,onAccount,onCart,onMenu,onSection}) {
+return <header className="order-header">
+ <a className="order-brand" href={tableToken?`/t/${tableToken}`:'/'} onClick={event=>{event.preventDefault();onBack()}}><span className="brand-symbol">R<span>✳</span></span><span>{company.name}<small>{company.tagline}</small></span></a>
+ <nav className="site-nav" aria-label="Main navigation"><a href="#story" onClick={event=>{event.preventDefault();onSection('story')}}>OUR STORY</a><a href="#menu" onClick={event=>{event.preventDefault();onMenu()}}>MENU</a><a href="#visit" onClick={event=>{event.preventDefault();onSection('visit')}}>VISIT</a></nav>
+ <div className="header-context">{table?<span className="table-chip"><i/> TABLE {table.tableNumber}</span>:<span className="delivery-chip">HOME DELIVERY AVAILABLE</span>}</div>
+ <div className="header-actions"><ThemeToggle theme={theme} onToggle={toggleTheme}/><button className="account-button" type="button" onClick={onAccount}>{customer?.name||customer?.phone||'SIGN IN'}</button><button className="header-cart" type="button" onClick={onCart}>ORDER <b>{cartCount}</b></button></div>
+ <div className="mobile-header-actions"><button className="mobile-menu-button" type="button" aria-label={mobileNavOpen?'Close navigation':'Open navigation'} aria-expanded={mobileNavOpen} aria-controls="mobile-site-menu" onClick={()=>setMobileNavOpen(open=>!open)}>{mobileNavOpen?'×':'☰'}</button><ThemeToggle theme={theme} onToggle={toggleTheme}/><button className="mobile-icon-button" type="button" aria-label={customer?'Your account':'Sign in'} onClick={onAccount}><UserIcon/></button><button className="mobile-order-button" type="button" aria-label={`Order, ${cartCount} items`} onClick={onCart}><CartIcon/><b>{cartCount}</b></button></div>
+ {mobileNavOpen&&<nav id="mobile-site-menu" className="mobile-site-menu" aria-label="Mobile navigation"><a href="#story" onClick={event=>{event.preventDefault();onSection('story')}}>OUR STORY <span>01</span></a><a href="#menu" onClick={event=>{event.preventDefault();onMenu()}}>THE MENU <span>02</span></a><a href="#visit" onClick={event=>{event.preventDefault();onSection('visit')}}>FIND US <span>03</span></a></nav>}
+</header>;
+}
+
+function AccountScreen({header,customer,orders,connected,onBack,onOrders,onSignOut}) {
+const initial=customer?.name?.trim()?.charAt(0).toUpperCase()||'R';
+const orderCount=orders.length;
+
+return (
+ <>
+ {header}
+ <main className="customer-page account-page">
+  <section className="customer-page-panel account-page-panel">
+   <div className="customer-page-toolbar">
+    <button className="customer-page-back" type="button" onClick={onBack}>BACK <span>TO RESTAURANT</span></button>
+    <span>YOUR ACCOUNT</span>
+    <span className="customer-page-live"><i/> {connected?'LIVE':'RECONNECTING'}</span>
+   </div>
+   <div className="account-content">
+    <header className="account-intro">
+     <span className="orange-kicker">YOUR RESTAURANT PROFILE</span>
+     <h1>Good to have you <em>back.</em></h1>
+     <p>Your account details and order history, all in one place.</p>
+    </header>
+    <section className="account-profile-card" aria-label="Account details">
+     <span className="account-avatar" aria-hidden="true">{initial}</span>
+     <div className="account-profile-info">
+      <span className="account-field-label">SIGNED IN AS</span>
+      <h2>{customer?.name||'Restaurant guest'}</h2>
+      <p>{customer?.phone||'Mobile number unavailable'}</p>
+     </div>
+     <span className="account-status"><i/> ACCOUNT ACTIVE</span>
+    </section>
+    <section className="account-actions" aria-label="Account actions">
+     <button className="account-action-card" type="button" onClick={onOrders}>
+      <span className="account-action-icon" aria-hidden="true">↗</span>
+      <span className="account-action-copy"><b>Order history</b><small>Review recent orders and follow their progress.</small></span>
+      <span className="account-action-meta">{orderCount} {orderCount===1?'ORDER':'ORDERS'}</span>
+      <span className="account-action-arrow" aria-hidden="true">→</span>
+     </button>
+     <button className="account-action-card account-signout-card" type="button" onClick={onSignOut}>
+      <span className="account-action-icon" aria-hidden="true">↪</span>
+      <span className="account-action-copy"><b>Sign out</b><small>End your session on this device.</small></span>
+      <span className="account-action-arrow" aria-hidden="true">→</span>
+     </button>
+    </section>
+   </div>
+  </section>
+ </main>
+ </>
+);
+}
+
+function CustomerCartScreen({header,cart,cartCount,subtotal,isDineIn,table,connected,error,onBack,onUpdateQty,onCheckout,onOrders,onMenu}) {
+return (
+ <>
+  {header}
+  <main className="customer-page customer-cart-page">
+   <section className="customer-page-panel customer-cart-panel">
+    <div className="customer-page-toolbar"><button className="customer-page-back" type="button" onClick={onBack}>BACK <span>TO RESTAURANT</span></button><span>YOUR ORDER</span><span className="customer-page-live"><i/> {connected?'LIVE':'RECONNECTING'}</span></div>
+    <div className="customer-cart-content">
+     <header className="customer-cart-intro">
+      <div><span className="orange-kicker">{isDineIn?`TABLE ${table?.tableNumber||''}`:'HOME DELIVERY'}</span><h1>Your <em>order.</em></h1><p>{cartCount?`${cartCount} item${cartCount===1?'':'s'} in your bag, prepared fresh for you.`:'Your bag is ready for something delicious.'}</p></div>
+      <button className="customer-history-link" type="button" onClick={onOrders}>ORDER HISTORY <b>↗</b></button>
+     </header>
+     {cart.length?(
+      <div className="customer-cart-layout">
+       <section className="customer-cart-items" aria-label="Items in your order">
+        {cart.map(item=><article className="customer-cart-item" key={item.key}>
+         <div className="customer-cart-item-copy"><h2>{item.name}</h2><p>{item.selectedOptions?.map(option=>option.label).join(' · ')||'Made fresh to order'}</p><strong>{money(item.price*item.quantity)}</strong></div>
+         <div className="customer-cart-quantity" aria-label={`Quantity for ${item.name}`}><button type="button" aria-label={`Remove one ${item.name}`} onClick={()=>onUpdateQty(item.key,-1)}>−</button><span>{item.quantity}</span><button type="button" aria-label={`Add one ${item.name}`} onClick={()=>onUpdateQty(item.key,1)}>+</button></div>
+        </article>)}
+        <button className="customer-cart-add-more" type="button" onClick={onMenu}>ADD MORE ITEMS <b>+</b></button>
+       </section>
+       <aside className="customer-cart-summary">
+        <span className="account-field-label">ORDER SUMMARY</span>
+        <div><span>Items subtotal</span><strong>{money(subtotal)}</strong></div>
+        <p>Taxes and delivery, if any, are calculated at checkout.</p>
+        {error&&<div className="form-error">{error}</div>}
+        <button className="orange-button wide" type="button" onClick={onCheckout}>CONTINUE TO CHECKOUT <span>→</span></button>
+        <button className="customer-history-link customer-summary-history" type="button" onClick={onOrders}>VIEW ORDER HISTORY <b>↗</b></button>
+       </aside>
+      </div>
+     ):(
+      <section className="customer-cart-empty">
+       <span className="customer-cart-empty-icon" aria-hidden="true">✳</span>
+       <span className="orange-kicker">NOTHING IN YOUR BAG YET</span>
+       <h2>Make room for something <em>delicious.</em></h2>
+       <p>Explore the menu to find a favorite, or check the progress of a previous order.</p>
+       <div className="customer-cart-empty-actions"><button className="orange-button" type="button" onClick={onMenu}>EXPLORE THE MENU <span>→</span></button><button className="customer-history-link" type="button" onClick={onOrders}>VIEW ORDER HISTORY <b>↗</b></button></div>
+      </section>
+     )}
+    </div>
+   </section>
+  </main>
+ </>
+);
+}
+
+function CustomerOrdersScreen({header,customer,orders,connected,onBack,onOrder,onMenu,onSignIn}) {
+return (
+ <>
+  {header}
+  <main className="customer-page customer-orders-page">
+   <section className="customer-page-panel customer-orders-panel">
+    <div className="customer-page-toolbar"><button className="customer-page-back" type="button" onClick={onBack}>BACK <span>TO RESTAURANT</span></button><span>ORDER HISTORY</span><span className="customer-page-live"><i/> {connected?'LIVE':'RECONNECTING'}</span></div>
+    <div className="customer-orders-content">
+     <header className="customer-orders-intro"><span className="orange-kicker">YOUR ORDER HISTORY</span><h1>Your <em>orders.</em></h1><p>Review your recent orders and follow their progress.</p></header>
+     {orders.length?(
+      <div className="customer-order-list">
+       {orders.map(order=>{
+        const placedAt=new Date(order.placedAt||order.placed_at);
+        const date=Number.isNaN(placedAt.getTime())?'Date unavailable':placedAt.toLocaleString([], { dateStyle:'medium',timeStyle:'short' });
+        const type=String(order.orderType||order.order_type||'ORDER').replaceAll('_',' ');
+        const status=String(order.status||'NEW').replaceAll('_',' ');
+        return <button className="customer-order-card" key={order.id} type="button" onClick={()=>onOrder(order)}>
+         <span className="customer-order-card-top"><span className="customer-order-number"><small>ORDER</small><b>#{order.orderNumber||order.order_number}</b></span><i className={`status-pill ${String(order.status||'new').toLowerCase()}`}>{status}</i></span>
+         <span className="customer-order-card-meta"><span>{type} <i>·</i> {date}</span><strong>{money(order.total)}</strong></span>
+         <span className="customer-order-card-action">VIEW ORDER DETAILS <b>→</b></span>
+        </button>;
+       })}
+      </div>
+     ):<div className="customer-orders-empty"><span className="account-action-icon" aria-hidden="true">↗</span><h2>{customer?'No orders yet':'Sign in to see your orders'}</h2><p>{customer?'Your placed orders and their live progress will appear here.':'Your order history is linked to your customer account.'}</p><button className="orange-button" type="button" onClick={customer?onMenu:onSignIn}>{customer?'EXPLORE THE MENU':'SIGN IN'} <span>→</span></button></div>}
+    </div>
+   </section>
+  </main>
+ </>
+);
 }
 
 function AuthPanel({authStep,setAuthStep,phone,setPhone,otp,setOtp,devCode,error,busy,onRequest,onVerify}){return <><span className="orange-kicker">MOBILE OTP ACCESS</span><h2 className="customer-auth-title">{authStep==='phone'?'Continue with':'Verify your'}<br/><em>{authStep==='phone'?'OTP verification.':'mobile number.'}</em></h2><p className="auth-copy">{authStep==='phone'?'Enter your mobile number and we will send a one-time code. New numbers are saved after verification; existing accounts are matched by number.':'Enter the one-time code sent to your mobile.'}</p>{authStep==='phone'?<form className="checkout-form" onSubmit={onRequest}><label>MOBILE NUMBER<input type="tel" autoComplete="tel" required value={phone} onChange={e=>setPhone(e.target.value)} placeholder="+91 98765 43210"/></label>{error&&<div className="form-error">{error}</div>}<button className="orange-button wide" disabled={busy}>{busy?'SENDING...':'CONTINUE WITH OTP'} <span>-&gt;</span></button></form>:<form className="checkout-form" onSubmit={onVerify}><p>Code sent to {phone}.</p>{devCode&&<div className="dev-otp">DEVELOPMENT OTP: <b>{devCode}</b></div>}<label>6-DIGIT OTP<input inputMode="numeric" autoComplete="one-time-code" maxLength="6" required value={otp} onChange={e=>setOtp(e.target.value.replace(/\D/g,''))}/></label>{error&&<div className="form-error">{error}</div>}<button className="orange-button wide" disabled={busy}>{busy?'VERIFYING...':'VERIFY MOBILE'} <span>-&gt;</span></button><button type="button" className="text-action" onClick={()=>setAuthStep('phone')}>CHANGE MOBILE NUMBER</button></form>}</>}
