@@ -1,0 +1,46 @@
+{
+  "name": "Ember & Spice",
+  "tagline": "Indian kitchen · Bengaluru",
+  "description": "A neighborhood Indian kitchen serving freshly prepared food for dine-in and home delivery.",
+  "contact": {
+    "phone": "+91 80 0000 0000",
+    "email": "hello@emberandspice.example",
+    "whatsapp": "+91 80 0000 0000"
+  },
+  "address": {
+    "line1": "12 Garden Lane",
+    "area": "Indiranagar",
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "postalCode": "560038",
+    "country": "India",
+    "mapUrl": ""
+  },
+  "hours": [
+    { "days": "Every day", "opens": "11:00", "closes": "22:00" }
+  ],
+  "serviceModes": {
+    "dineIn": true,
+    "homeDelivery": true,
+    "takeaway": false
+  },
+  "delivery": {
+    "minimumOrder": 0,
+    "fee": 0,
+    "estimatedMinutes": "30–50 minutes",
+    "coverageDescription": "Delivery availability is confirmed by delivery address or postal code."
+  },
+  "social": {
+    "instagram": "",
+    "facebook": "",
+    "website": ""
+  },
+  "branding": {
+    "logoUrl": "",
+    "heroImageUrl": "",
+    "primaryColor": "#ff6b26",
+    "currency": "INR",
+    "locale": "en-IN"
+  },
+  "notice": "Sample restaurant information. Replace these values with the restaurant's confirmed details."
+}
