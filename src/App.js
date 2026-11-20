@@ -3,6 +3,7 @@ import companyData from './data/company.json';
 import {api,send} from './api';
 import useCustomerRealtime from './hooks/useCustomerRealtime';
 import QRCodeScanner from './components/QRCodeScanner';
+import ThemeToggle from './components/ThemeToggle';
 import './App.css';
 
 const money=n=>`₹${Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2})}`;
@@ -20,8 +21,10 @@ export default function App(){
  const [deliveryQuote,setDeliveryQuote]=useState(null),[deliveryQuoteError,setDeliveryQuoteError]=useState('');
  const [gameIndex,setGameIndex]=useState(0),[gameAnswer,setGameAnswer]=useState(null),[gameScore,setGameScore]=useState(0);
  const [bannerIndex,setBannerIndex]=useState(0);
+ const [theme,setTheme]=useState(()=>localStorage.getItem('restro.customer.theme')||'dark');
  const {revision,connected}=useCustomerRealtime(customer?.token,session);
  const isDineIn=Boolean(tableToken);
+ useEffect(()=>{localStorage.setItem('restro.customer.theme',theme)},[theme]);
  const banners=company.branding?.banners||[];
  const activeBanner=banners.length?banners[bannerIndex%banners.length]:null;
  const siteBannerImage=activeBanner?.imageUrl||company.branding?.heroImageUrl||'';
@@ -56,8 +59,9 @@ export default function App(){
  async function payDemo(order){setBusy(true);setError('');try{const result=await api(`/orders/${order.id}/dummy-payment`,{token:customer.token,...send('POST',{})});notify(result.message||'Demo payment recorded');setCurrentOrder(x=>x?{...x,paymentStatus:'PAID'}:x);api('/orders',{token:customer.token}).then(setOrders)}catch(e){setError(e.message)}finally{setBusy(false)}}
  async function payTable(){setBusy(true);setError('');try{const result=await api(`/sessions/${session.id}/dummy-payment`,{token:customer.token,...send('POST',{qrToken:tableToken})});setCurrentOrder(x=>({...x,paymentStatus:'PAID'}));notify(result.message)}catch(e){setError(e.message)}finally{setBusy(false)}}
  function answer(index){if(gameAnswer!==null)return;setGameAnswer(index);if(index===questions[gameIndex][2])setGameScore(score=>score+1)}
+ function toggleTheme(){setTheme(current=>current==='dark'?'light':'dark')}
 
- return <div className="order-app"><header className="order-header"><a className="order-brand" href="#top"><span className="brand-symbol">R<span>✳</span></span><span>{company.name}<small>{company.tagline}</small></span></a><nav className="site-nav" aria-label="Main navigation"><a href="#story">OUR STORY</a><a href="#menu">MENU</a><a href="#visit">VISIT</a></nav><div className="header-context">{table?<span className="table-chip"><i/> TABLE {table.tableNumber}</span>:<span className="delivery-chip">HOME DELIVERY AVAILABLE</span>}</div><div className="header-actions"><button className="scan-button" onClick={()=>setDrawer('scan')}>SCAN TABLE QR</button><button className="account-button" onClick={()=>customer?setDrawer('account'):(setAuthPurpose('login'),setAuthStep('phone'),setDrawer('auth'))}>{customer?customer.name||customer.phone:'SIGN IN'}</button><button className="header-cart" onClick={()=>setDrawer('cart')}>ORDER <b>{cartCount}</b></button></div></header>
+ return <div className="order-app" data-theme={theme}><header className="order-header"><a className="order-brand" href="#top"><span className="brand-symbol">R<span>✳</span></span><span>{company.name}<small>{company.tagline}</small></span></a><nav className="site-nav" aria-label="Main navigation"><a href="#story">OUR STORY</a><a href="#menu">MENU</a><a href="#visit">VISIT</a></nav><div className="header-context">{table?<span className="table-chip"><i/> TABLE {table.tableNumber}</span>:<span className="delivery-chip">HOME DELIVERY AVAILABLE</span>}</div><div className="header-actions"><ThemeToggle theme={theme} onToggle={toggleTheme}/><button className="scan-button" onClick={()=>setDrawer('scan')}>SCAN TABLE QR</button><button className="account-button" onClick={()=>customer?setDrawer('account'):(setAuthPurpose('login'),setAuthStep('phone'),setDrawer('auth'))}>{customer?customer.name||customer.phone:'SIGN IN'}</button><button className="header-cart" onClick={()=>setDrawer('cart')}>ORDER <b>{cartCount}</b></button></div></header>
  <main id="top"><section className="order-hero"><div className="hero-glow"/><div className="hero-content reveal"><span className="orange-kicker">✳ &nbsp; {activeBanner?.eyebrow||'FRESH FROM OUR KITCHEN'}</span><h1>{company.hero?.line1||'Good food.'}<br/><em>{company.hero?.line2||'Great company.'}</em></h1><p>{company.description}</p><a className="orange-button" href="#menu">EXPLORE THE MENU <span>↓</span></a><div className="hero-meta"><span>{table?`TABLE ${table.tableNumber} · DINE IN`:'HOME DELIVERY · BENGALURU'}</span><span>MADE FRESH TO ORDER</span></div></div><div className="hero-image reveal">{siteBannerImage&&<img src={siteBannerImage} alt={activeBanner?.alt||`${company.name} restaurant`}/>}<span className="image-caption">{company.name.toUpperCase()} · MADE WITH CARE</span><div className="hero-stamp">FRESH<br/><b>✳</b><br/>ALWAYS</div></div></section>
  <div className="ticker"><span>BIG FLAVOUR, NO SHORTCUTS</span><b>✳</b><span>GOOD THINGS TAKE A LITTLE TIME</span><b>✳</b><span>MADE FOR SHARING</span></div>
  <section id="story" className="brand-story reveal"><div className="story-photo">{company.story?.imageUrl&&<img src={company.story.imageUrl} alt={company.story.imageAlt||`${company.name} dining`}/>}<span>{company.story?.signature||'Made fresh, shared together'}</span></div><div className="story-copy"><span className="orange-kicker">{company.story?.eyebrow||'OUR APPROACH'}</span><h2>{company.story?.heading||'Good food belongs around a table.'}</h2><p>{company.story?.body||company.description}</p><a href="#menu">GET TO KNOW THE MENU <b>↗</b></a><div className="story-signature">{company.name}<small>{company.tagline}</small></div></div></section>
